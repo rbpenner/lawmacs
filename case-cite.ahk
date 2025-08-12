@@ -8,13 +8,17 @@
 ;   ::<trigger>n  -> "<Short case name>" ; italicized via Ctrl+I
 ; Immediate insertion: italicizes the Case Name by sending Ctrl+I before and after the name (no slash wrappers).
 
+gCaseTriggerSet := Map()
+
 ^!c:: {
+    global gCaseTriggerSet
     try {
         caseName := Prompt("Case Name:")
         mainReporter := Prompt("Main reporter cite:")
         pincite := Prompt("Pincite (optional):")
         courtDate := Prompt("Court and date:")
         trigger := Prompt("Abbrev trigger:")
+        gCaseTriggerSet[trigger] := true
         shortCaseName := Prompt("Short case name:")
 
         ; Build the tail of the citation (text following the case name)
@@ -82,4 +86,17 @@ TypeItalicThen(name, tail) {
     SendText(name)
     Send("^i")
     SendText(tail)
+}
+
+^!l:: {
+    global gCaseTriggerSet
+    triggers := []
+    for trig, _ in gCaseTriggerSet
+        triggers.Push(trig)
+    if (triggers.Length = 0) {
+        MsgBox("No case triggers defined.")
+        return
+    }
+    triggers.Sort()
+    MsgBox("Active case triggers:`n" . triggers.Join("`n"))
 }
