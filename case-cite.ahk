@@ -3,9 +3,9 @@
 ; Case citation helper — mirrors Emacs case-cite-skeleton.el
 ; Hotkey: Ctrl+Alt+C opens a prompt wizard, inserts the long cite at the caret,
 ; and defines three hotstrings:
-;   ::<trigger>   -> "/<Case Name>/, <Main reporter cite> (<Court and date>)"  ; no pincite (matches abbrev behavior)
-;   ::<trigger>sh -> "/<Short case name>/, <Main reporter cite (shortened unless contains WL)> at"
-;   ::<trigger>n  -> "/<Short case name>/"
+;   ::<trigger>   -> "<Case Name>, <Main reporter cite> (<Court and date>)"  ; no pincite, case name italicized via Ctrl+I
+;   ::<trigger>sh -> "<Short case name>, <Main reporter cite (shortened unless contains WL)> at" ; case name italicized via Ctrl+I
+;   ::<trigger>n  -> "<Short case name>" ; italicized via Ctrl+I
 ; Immediate insertion: italicizes the Case Name by sending Ctrl+I before and after the name (no slash wrappers).
 
 ^!c:: {
@@ -23,8 +23,8 @@
             restAfterCase .= ", " Trim(pincite)
         restAfterCase .= " (" courtDate ")"
 
-        ; Build long-form hotstring text (no pincite, mirrors Emacs abbrev)
-        longCiteAbbrev := "/" caseName "/, " mainReporter " (" courtDate ")"
+        ; Build long-form hotstring textual tail (no pincite)
+        longTail := ", " mainReporter " (" courtDate ")"
 
         ; Build short reporter portion: if mainReporter contains "WL", keep as-is;
         ; otherwise drop the last whitespace-separated token (e.g., the page).
@@ -45,18 +45,15 @@
             shortReporter := mainReporter
         }
 
-        shortCite := "/" shortCaseName "/, " shortReporter " at"
-        shortNameText := "/" shortCaseName "/"
+        shortTail := ", " shortReporter " at"
 
-        ; Define dynamic hotstrings
-        Hotstring("::" . trigger, longCiteAbbrev)
-        Hotstring("::" . trigger . "sh", shortCite)
-        Hotstring("::" . trigger . "n", shortNameText)
+        ; Define dynamic hotstrings with callbacks to apply italics (Ctrl+I) around names
+        Hotstring("::" . trigger, (*) => TypeItalicThen(caseName, longTail))
+        Hotstring("::" . trigger . "sh", (*) => TypeItalicThen(shortCaseName, shortTail))
+        Hotstring("::" . trigger . "n", (*) => TypeItalic(shortCaseName))
 
         ; Insert the citation at the caret, italicizing the case name via Ctrl+I
-        Send("^i")
-        SendText(caseName)
-        Send("^i")
+        TypeItalic(caseName)
         SendText(restAfterCase)
 
         ; Brief confirmation
@@ -72,4 +69,17 @@ Prompt(prompt) {
     if (ib.Result != "OK")
         throw Error("Canceled")
     return ib.Value
+}
+
+TypeItalic(text) {
+    Send("^i")
+    SendText(text)
+    Send("^i")
+}
+
+TypeItalicThen(name, tail) {
+    Send("^i")
+    SendText(name)
+    Send("^i")
+    SendText(tail)
 }
