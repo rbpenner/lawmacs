@@ -6,6 +6,7 @@
 ;   ::<trigger>   -> "/<Case Name>/, <Main reporter cite> (<Court and date>)"  ; no pincite (matches abbrev behavior)
 ;   ::<trigger>sh -> "/<Short case name>/, <Main reporter cite (shortened unless contains WL)> at"
 ;   ::<trigger>n  -> "/<Short case name>/"
+; Immediate insertion: italicizes the Case Name by sending Ctrl+I before and after the name (no slash wrappers).
 
 ^!c:: {
     try {
@@ -16,13 +17,13 @@
         trigger := Prompt("Abbrev trigger:")
         shortCaseName := Prompt("Short case name:")
 
-        ; Build immediate insertion (includes pincite if provided)
-        longCiteInsert := "/" caseName "/, " mainReporter
+        ; Build the tail of the citation (text following the case name)
+        restAfterCase := ", " mainReporter
         if (Trim(pincite) != "")
-            longCiteInsert .= ", " Trim(pincite)
-        longCiteInsert .= " (" courtDate ")"
+            restAfterCase .= ", " Trim(pincite)
+        restAfterCase .= " (" courtDate ")"
 
-        ; Build long-form hotstring text (no pincite, to mirror Emacs abbrev)
+        ; Build long-form hotstring text (no pincite, mirrors Emacs abbrev)
         longCiteAbbrev := "/" caseName "/, " mainReporter " (" courtDate ")"
 
         ; Build short reporter portion: if mainReporter contains "WL", keep as-is;
@@ -52,8 +53,11 @@
         Hotstring("::" . trigger . "sh", shortCite)
         Hotstring("::" . trigger . "n", shortNameText)
 
-        ; Insert the long citation at the caret (with pincite if given)
-        SendText(longCiteInsert)
+        ; Insert the citation at the caret, italicizing the case name via Ctrl+I
+        Send("^i")
+        SendText(caseName)
+        Send("^i")
+        SendText(restAfterCase)
 
         ; Brief confirmation
         ToolTip("Defined hotstrings: " . trigger . ", " . trigger . "sh, " . trigger . "n", , , 1)
